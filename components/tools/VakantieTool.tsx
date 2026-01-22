@@ -110,8 +110,8 @@ const VakantieTool: React.FC = () => {
         
         <div className="bg-teal-50 p-6 rounded-xl border border-teal-100 text-center mb-6">
            <p className="text-sm text-teal-700 uppercase font-semibold">Totale vakantiekosten</p>
-           <h3 className="text-3xl font-bold text-teal-800 mt-2">€ {totalCost.toLocaleString()}</h3>
-           <p className="text-sm text-teal-600 mt-1">€ {perPerson.toLocaleString(undefined, {maximumFractionDigits: 0})} per persoon</p>
+           <h3 className="text-3xl font-bold text-teal-800 mt-2">€ {totalCost.toLocaleString('nl-NL')}</h3>
+           <p className="text-sm text-teal-600 mt-1">€ {perPerson.toLocaleString('nl-NL', {maximumFractionDigits: 0})} per persoon</p>
         </div>
 
         <div className="space-y-3">

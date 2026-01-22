@@ -56,7 +56,7 @@ const App: React.FC = () => {
       case ToolId.ZZP_TAX: return 'ZZP Belasting Calculator';
       case ToolId.VERMOGEN: return 'Vermogensgroei Planner';
       case ToolId.BELEGGEN: return 'Sparen vs. Beleggen';
-      case ToolId.DASHBOARD: return 'Financieel Dashboard';
+      case ToolId.DASHBOARD: return 'Dashboard'; // Title hidden in Dashboard component
       case ToolId.BUDGET: return 'Budgetruimte & Invoer';
       case ToolId.KOSTENVERDELER: return 'Eerlijke Kostenverdeler';
       case ToolId.MIN_BALANCE: return 'Minimale Buffer Calculator';
@@ -70,7 +70,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
       {/* Sidebar */}
       <Sidebar 
         activeTool={activeTool} 
@@ -80,27 +80,32 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Mobile Header */}
-        <header className="bg-white border-b border-slate-200 lg:hidden p-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-slate-800">Financieel Inzicht</h1>
+        <header className="bg-white border-b border-slate-200 lg:hidden p-4 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">F</div>
+            <h1 className="text-lg font-bold text-slate-800">Financieel Inzicht</h1>
+          </div>
           <button 
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
           >
             <Menu className="w-6 h-6" />
           </button>
         </header>
 
         {/* Desktop Header & Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-8 hidden lg:block">
-              <h1 className="text-2xl font-bold text-slate-900">{getTitle()}</h1>
-              <p className="text-slate-500 mt-1">
-                {activeTool === ToolId.DASHBOARD ? 'Welkom terug! Hier is je financieel overzicht.' : 'Bereken en plan je financiële toekomst.'}
-              </p>
-            </div>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
+            {activeTool !== ToolId.DASHBOARD && (
+              <div className="mb-8 hidden lg:block">
+                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{getTitle()}</h1>
+                <p className="text-slate-500 mt-2 text-lg">
+                  Beheer en plan je financiën slim en efficiënt.
+                </p>
+              </div>
+            )}
             
             {renderContent()}
           </div>

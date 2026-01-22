@@ -136,29 +136,29 @@ const MinBalanceTool: React.FC = () => {
           
           <div className="text-center py-6 bg-orange-50 rounded-xl border border-orange-100 mb-6">
             <p className="text-sm text-orange-700 uppercase font-semibold">Minimaal aanbevolen spaargeld</p>
-            <h3 className="text-4xl font-bold text-orange-600 mt-2">€ {buffer.toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
+            <h3 className="text-4xl font-bold text-orange-600 mt-2">€ {buffer.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</h3>
           </div>
 
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Opbouw van de buffer</h3>
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm p-2 bg-slate-50 rounded">
               <span className="text-slate-600">Vervanging inboedel</span>
-              <span className="font-medium">€ {breakdown.inventory.toLocaleString()}</span>
+              <span className="font-medium">€ {breakdown.inventory.toLocaleString('nl-NL')}</span>
             </div>
             <div className="flex justify-between items-center text-sm p-2 bg-slate-50 rounded">
               <span className="text-slate-600">Onvoorzien</span>
-              <span className="font-medium">€ {breakdown.unforeseen.toLocaleString()}</span>
+              <span className="font-medium">€ {breakdown.unforeseen.toLocaleString('nl-NL')}</span>
             </div>
             {hasHome && (
               <div className="flex justify-between items-center text-sm p-2 bg-slate-50 rounded">
                 <span className="text-slate-600">Onderhoud huis (reservering)</span>
-                <span className="font-medium">€ {breakdown.home.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                <span className="font-medium">€ {breakdown.home.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</span>
               </div>
             )}
              {hasCar && (
               <div className="flex justify-between items-center text-sm p-2 bg-slate-50 rounded">
                 <span className="text-slate-600">Onderhoud/reparatie auto</span>
-                <span className="font-medium">€ {breakdown.car.toLocaleString()}</span>
+                <span className="font-medium">€ {breakdown.car.toLocaleString('nl-NL')}</span>
               </div>
             )}
           </div>

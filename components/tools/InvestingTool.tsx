@@ -158,7 +158,7 @@ const InvestingTool: React.FC = () => {
             </h2>
              <div className="text-right">
                 <span className="text-xs text-slate-400 uppercase font-semibold">Verschil na {years} jaar</span>
-                <div className="text-xl font-bold text-green-600">+ € {result.difference ? result.difference.toLocaleString(undefined, {maximumFractionDigits: 0}) : 0}</div>
+                <div className="text-xl font-bold text-green-600">+ € {result.difference ? result.difference.toLocaleString('nl-NL', {maximumFractionDigits: 0}) : 0}</div>
              </div>
            </div>
            
@@ -180,7 +180,7 @@ const InvestingTool: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <Tooltip 
                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                   formatter={(value: number) => [`€ ${value.toLocaleString()}`, '']}
+                   formatter={(value: number) => [`€ ${value.toLocaleString('nl-NL')}`, '']}
                 />
                 <Legend iconType="circle" />
                 <Area type="monotone" dataKey="beleggen" name={`Beleggen (${investRate}%)`} stroke="#2563eb" fillOpacity={1} fill="url(#colorInvest)" strokeWidth={2} />
@@ -200,14 +200,14 @@ const InvestingTool: React.FC = () => {
                     <div className="w-3 h-3 rounded-full bg-slate-500"></div>
                     <span className="text-sm text-slate-600">Eindbedrag sparen</span>
                  </div>
-                 <span className="font-semibold text-slate-800">€ {result.finalSavings ? result.finalSavings.toLocaleString(undefined, {maximumFractionDigits: 0}) : 0}</span>
+                 <span className="font-semibold text-slate-800">€ {result.finalSavings ? result.finalSavings.toLocaleString('nl-NL', {maximumFractionDigits: 0}) : 0}</span>
               </div>
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-blue-600"></div>
                     <span className="text-sm text-slate-600">Eindbedrag beleggen</span>
                  </div>
-                 <span className="font-bold text-blue-700">€ {result.finalInvest ? result.finalInvest.toLocaleString(undefined, {maximumFractionDigits: 0}) : 0}</span>
+                 <span className="font-bold text-blue-700">€ {result.finalInvest ? result.finalInvest.toLocaleString('nl-NL', {maximumFractionDigits: 0}) : 0}</span>
               </div>
               <div className="pt-4 border-t border-slate-200 mt-2">
                  <div className="flex items-start gap-2 text-xs text-slate-500">

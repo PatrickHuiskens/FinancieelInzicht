@@ -108,11 +108,11 @@ const KostenverdelerTool: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                  <div className="text-xs text-blue-800 uppercase font-bold mb-1">Partner A betaalt</div>
-                 <div className="text-xl font-bold text-blue-900">€ {bedragA.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+                 <div className="text-xl font-bold text-blue-900">€ {bedragA.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</div>
                </div>
                <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
                  <div className="text-xs text-purple-800 uppercase font-bold mb-1">Partner B betaalt</div>
-                 <div className="text-xl font-bold text-purple-900">€ {bedragB.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+                 <div className="text-xl font-bold text-purple-900">€ {bedragB.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</div>
                </div>
             </div>
 
@@ -120,7 +120,7 @@ const KostenverdelerTool: React.FC = () => {
               <h3 className="text-sm font-medium text-slate-700 mb-2">50/50 Verdeling (ter vergelijking)</h3>
               <div className="flex justify-between text-sm text-slate-500">
                 <span>Beide partners:</span>
-                <span>€ {(gezamenlijkeKosten / 2).toLocaleString()}</span>
+                <span>€ {(gezamenlijkeKosten / 2).toLocaleString('nl-NL')}</span>
               </div>
             </div>
           </div>

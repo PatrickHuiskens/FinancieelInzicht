@@ -158,13 +158,13 @@ const PensioenTool: React.FC = () => {
           <div className="space-y-4">
              <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-600">Geschat vermogen op {pensioenLeeftijd}:</span>
-                <span className="font-bold text-slate-800">€ {eindKapitaal.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                <span className="font-bold text-slate-800">€ {eindKapitaal.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</span>
              </div>
              
              {tekort > 0 ? (
                 <div className="p-4 bg-red-50 rounded-lg border border-red-100 text-center">
                     <p className="text-sm text-red-700 font-semibold uppercase">Geschat kapitaaltekort</p>
-                    <h3 className="text-3xl font-bold text-red-600 mt-2">€ {tekort.toLocaleString(undefined, {maximumFractionDigits: 0})}</h3>
+                    <h3 className="text-3xl font-bold text-red-600 mt-2">€ {tekort.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</h3>
                     <p className="text-xs text-red-500 mt-2">Je komt waarschijnlijk geld tekort voor je gewenste levensstijl.</p>
                 </div>
              ) : (

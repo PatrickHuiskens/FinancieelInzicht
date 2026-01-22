@@ -120,7 +120,7 @@ const AflosTool: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 mb-4">
              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                <div className="text-xs text-green-800 uppercase font-bold mb-1">Totale besparing</div>
-               <div className="text-xl font-bold text-green-700">€ {besparing.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+               <div className="text-xl font-bold text-green-700">€ {besparing.toLocaleString('nl-NL', {maximumFractionDigits: 0})}</div>
              </div>
              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                <div className="text-xs text-blue-800 uppercase font-bold mb-1">Nieuwe looptijd</div>
