@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
-import { ToolId } from './types';
+import { ToolId, AppMode } from './types';
 import ZZPTool from './components/tools/ZZPTool';
 import WealthTool from './components/tools/WealthTool';
 import InvestingTool from './components/tools/InvestingTool';
@@ -14,16 +14,18 @@ import HypotheekTool from './components/tools/HypotheekTool';
 import AflosTool from './components/tools/AflosTool';
 import PensioenTool from './components/tools/PensioenTool';
 import StudieschuldTool from './components/tools/StudieschuldTool';
+import SchuldenOverzichtTool from './components/tools/SchuldenOverzichtTool';
 import PlaceholderTool from './components/PlaceholderTool';
 
 const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolId>(ToolId.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [appMode, setAppMode] = useState<AppMode>('standard');
 
   const renderContent = () => {
     switch (activeTool) {
       case ToolId.DASHBOARD:
-        return <Dashboard onNavigate={setActiveTool} />;
+        return <Dashboard onNavigate={setActiveTool} appMode={appMode} />;
       case ToolId.BUDGET:
         return <BudgetTool />;
       case ToolId.ZZP_TAX:
@@ -41,11 +43,13 @@ const App: React.FC = () => {
       case ToolId.HYPOTHEEK:
         return <HypotheekTool />;
       case ToolId.AFLOSSEN:
-        return <AflosTool />;
+        return <AflosTool appMode={appMode} />;
       case ToolId.PENSIOEN:
         return <PensioenTool />;
       case ToolId.STUDIESCHULD:
         return <StudieschuldTool />;
+      case ToolId.SCHULDEN:
+        return <SchuldenOverzichtTool />;
       default:
         return <PlaceholderTool title={activeTool.replace('_', ' ').toUpperCase()} />;
     }
@@ -62,9 +66,10 @@ const App: React.FC = () => {
       case ToolId.MIN_BALANCE: return 'Minimale Buffer Calculator';
       case ToolId.VAKANTIE: return 'Vakantiekosten Calculator';
       case ToolId.HYPOTHEEK: return 'Maximale Hypotheek Berekenen';
-      case ToolId.AFLOSSEN: return 'Extra Aflossen Calculator';
+      case ToolId.AFLOSSEN: return appMode === 'debt_counseling' ? 'Schulden Aflosstrategie' : 'Extra Aflossen Calculator';
       case ToolId.PENSIOEN: return 'Pensioengat & Lijfrente Tool';
       case ToolId.STUDIESCHULD: return 'Studieschuld & Draagkracht';
+      case ToolId.SCHULDEN: return 'Schulden Dossier';
       default: return 'Tool';
     }
   };
@@ -77,6 +82,8 @@ const App: React.FC = () => {
         onSelectTool={setActiveTool} 
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
+        appMode={appMode}
+        setAppMode={setAppMode}
       />
 
       {/* Main Content */}
@@ -84,7 +91,7 @@ const App: React.FC = () => {
         {/* Mobile Header */}
         <header className="bg-white border-b border-slate-200 lg:hidden p-4 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">F</div>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold ${appMode === 'standard' ? 'bg-indigo-600' : 'bg-orange-600'}`}>F</div>
             <h1 className="text-lg font-bold text-slate-800">Financieel Inzicht</h1>
           </div>
           <button 
@@ -100,9 +107,19 @@ const App: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {activeTool !== ToolId.DASHBOARD && (
               <div className="mb-8 hidden lg:block">
-                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{getTitle()}</h1>
+                <div className="flex items-center gap-3">
+                   <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{getTitle()}</h1>
+                   {appMode === 'debt_counseling' && (
+                     <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold uppercase rounded-full tracking-wider">
+                       Dossier Inzage
+                     </span>
+                   )}
+                </div>
                 <p className="text-slate-500 mt-2 text-lg">
-                  Beheer en plan je financiën slim en efficiënt.
+                  {appMode === 'debt_counseling' 
+                    ? 'Beheer het dossier en de voortgang van het traject.'
+                    : 'Beheer en plan je financiën slim en efficiënt.'
+                  }
                 </p>
               </div>
             )}

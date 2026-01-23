@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import { Wallet, TrendingDown, TrendingUp, Activity, ArrowRight, Info, HelpCircle } from 'lucide-react';
+import { Wallet, TrendingDown, TrendingUp, Activity, ArrowRight, Info, HelpCircle, Landmark, AlertTriangle } from 'lucide-react';
 import { BudgetGroup, SubItem } from './BudgetTool';
 import Tooltip from '../ui/Tooltip';
-import { ToolId } from '../../types';
+import { ToolId, AppMode } from '../../types';
 
 const cashflowData = [
   { name: 'Jan', inkomsten: 4500, uitgaven: 3200 },
@@ -23,10 +23,12 @@ interface DashboardStats {
   totalExpenses: number;
   balance: number;
   savingsPotential: number;
+  totalDebt?: number; // Added for debt mode
 }
 
 interface DashboardProps {
   onNavigate: (toolId: ToolId) => void;
+  appMode: AppMode;
 }
 
 const StatCard: React.FC<{
@@ -37,8 +39,9 @@ const StatCard: React.FC<{
   color: string;
   infoText?: string;
   trendText?: string;
-}> = ({ title, value, subValue, icon: Icon, color, infoText, trendText }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+  isWarning?: boolean;
+}> = ({ title, value, subValue, icon: Icon, color, infoText, trendText, isWarning }) => (
+  <div className={`bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 ${isWarning ? 'border border-red-100 bg-red-50/30' : ''}`}>
     <div className="flex items-start justify-between mb-4">
       <div className={`p-3.5 rounded-xl ${color} bg-opacity-10`}>
         <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
@@ -51,97 +54,120 @@ const StatCard: React.FC<{
     </div>
     <div>
       <h3 className="text-slate-500 text-sm font-medium mb-1">{title}</h3>
-      <div className="text-3xl font-bold text-slate-800 mb-1 tracking-tight">{value}</div>
+      <div className={`text-3xl font-bold mb-1 tracking-tight ${isWarning ? 'text-red-700' : 'text-slate-800'}`}>{value}</div>
       <div className="text-xs text-slate-400 flex items-center gap-1 flex-wrap mt-2">
         <span className="bg-slate-50 px-2 py-0.5 rounded text-slate-500 font-medium">{subValue}</span>
         {trendText && <span className="text-slate-300 mx-1 hidden sm:inline">&bull;</span>}
-        {trendText && <span className="text-xs font-medium text-green-600 flex items-center">{trendText}</span>}
+        {trendText && <span className={`text-xs font-medium flex items-center ${isWarning ? 'text-red-600' : 'text-green-600'}`}>{trendText}</span>}
       </div>
     </div>
   </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onNavigate, appMode }) => {
   const [nextPayment, setNextPayment] = useState<{name: string, amount: number, daysLeft: number} | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalIncome: 0,
     totalExpenses: 0,
     balance: 0,
-    savingsPotential: 0
+    savingsPotential: 0,
+    totalDebt: 0
   });
 
   useEffect(() => {
-    const savedData = localStorage.getItem('budgetData_v2');
-    if (!savedData) return;
+    // 1. Calculate Budget Stats
+    const savedBudgetData = localStorage.getItem('budgetData_v2');
+    let income = 0;
+    let expenses = 0;
+    const expenseItems: SubItem[] = [];
 
-    try {
-      const parsedData = JSON.parse(savedData);
-      const groups: BudgetGroup[] = parsedData.template || [];
-      
-      let income = 0;
-      let expenses = 0;
-      const expenseItems: SubItem[] = [];
-
-      groups.forEach(group => {
-        const groupTotal = group.items.reduce((sum, item) => sum + item.amount, 0);
-        if (group.type === 'income') {
-          income += groupTotal;
-        } else {
-          expenses += groupTotal;
-          expenseItems.push(...group.items);
-        }
-      });
-
-      setStats({
-        totalIncome: income,
-        totalExpenses: expenses,
-        balance: income - expenses,
-        savingsPotential: Math.max(0, income - expenses)
-      });
-
-      const today = new Date();
-      const currentDay = today.getDate();
-      
-      let nextUp: {name: string, amount: number, daysLeft: number} | null = null;
-      let minDaysDiff = 999;
-
-      expenseItems.forEach(item => {
-        if (item.paymentDay) {
-          let diff = item.paymentDay - currentDay;
-          if (diff < 0) {
-            diff += 30;
+    if (savedBudgetData) {
+      try {
+        const parsedData = JSON.parse(savedBudgetData);
+        const groups: BudgetGroup[] = parsedData.template || [];
+        
+        groups.forEach(group => {
+          const groupTotal = group.items.reduce((sum, item) => sum + item.amount, 0);
+          if (group.type === 'income') {
+            income += groupTotal;
+          } else {
+            expenses += groupTotal;
+            expenseItems.push(...group.items);
           }
-
-          if (diff < minDaysDiff) {
-            minDaysDiff = diff;
-            nextUp = {
-              name: item.name,
-              amount: item.amount,
-              daysLeft: diff
-            };
-          }
-        }
-      });
-
-      setNextPayment(nextUp);
-
-    } catch (e) {
-      console.error("Error calculating dashboard data", e);
+        });
+      } catch (e) { console.error(e); }
     }
-  }, []);
+
+    // 2. Calculate Debt Stats (if in Debt Mode)
+    let totalDebt = 0;
+    if (appMode === 'debt_counseling') {
+       const savedDebts = localStorage.getItem('debtsData');
+       if (savedDebts) {
+          try {
+             const debts = JSON.parse(savedDebts);
+             totalDebt = debts.reduce((sum: number, d: any) => sum + d.totalAmount, 0);
+          } catch (e) { console.error(e); }
+       }
+    }
+
+    // 3. Set State
+    setStats({
+      totalIncome: income,
+      totalExpenses: expenses,
+      balance: income - expenses,
+      savingsPotential: Math.max(0, income - expenses),
+      totalDebt
+    });
+
+    // 4. Determine Next Payment
+    const today = new Date();
+    const currentDay = today.getDate();
+    
+    let nextUp: {name: string, amount: number, daysLeft: number} | null = null;
+    let minDaysDiff = 999;
+
+    expenseItems.forEach(item => {
+      if (item.paymentDay) {
+        let diff = item.paymentDay - currentDay;
+        if (diff < 0) {
+          diff += 30;
+        }
+
+        if (diff < minDaysDiff) {
+          minDaysDiff = diff;
+          nextUp = {
+            name: item.name,
+            amount: item.amount,
+            daysLeft: diff
+          };
+        }
+      }
+    });
+
+    setNextPayment(nextUp);
+  }, [appMode]);
 
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="bg-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
+      <div className={`rounded-3xl p-8 text-white shadow-xl relative overflow-hidden ${appMode === 'debt_counseling' ? 'bg-orange-600 shadow-orange-200' : 'bg-indigo-600 shadow-indigo-200'}`}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 blur-3xl rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400 opacity-20 blur-2xl rounded-full transform -translate-x-1/4 translate-y-1/4"></div>
+        <div className={`absolute bottom-0 left-0 w-32 h-32 opacity-20 blur-2xl rounded-full transform -translate-x-1/4 translate-y-1/4 ${appMode === 'debt_counseling' ? 'bg-orange-400' : 'bg-indigo-400'}`}></div>
         
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Financieel overzicht</h2>
-            <p className="text-indigo-100 max-w-xl">
-              Welkom terug. Hier is een real-time analyse van je financiële gezondheid gebaseerd op je budget instellingen.
+            <div className="flex items-center gap-2 mb-2">
+               {appMode === 'debt_counseling' && (
+                 <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-white/20">
+                   Budgetbeheer
+                 </span>
+               )}
+               <h2 className="text-3xl font-bold">Financieel overzicht</h2>
+            </div>
+            <p className={`${appMode === 'debt_counseling' ? 'text-orange-50' : 'text-indigo-100'} max-w-xl`}>
+              {appMode === 'debt_counseling' 
+                ? 'Huidig dossier overzicht. Controleer de openstaande schulden en beheer de afloscapaciteit.' 
+                : 'Welkom terug. Hier is een real-time analyse van je financiële gezondheid gebaseerd op je budget instellingen.'}
             </p>
           </div>
           <div className="flex gap-3">
@@ -151,12 +177,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
              >
                Wijzig Budget
              </button>
-             <button 
-                onClick={() => onNavigate(ToolId.ZZP_TAX)}
-                className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-50 transition-colors"
-             >
-               Nieuwe Berekening
-             </button>
+             {appMode === 'standard' && (
+              <button 
+                  onClick={() => onNavigate(ToolId.ZZP_TAX)}
+                  className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-50 transition-colors"
+              >
+                Nieuwe Berekening
+              </button>
+             )}
+             {appMode === 'debt_counseling' && (
+              <button 
+                  onClick={() => onNavigate(ToolId.SCHULDEN)}
+                  className="bg-white text-orange-600 px-4 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-orange-50 transition-colors"
+              >
+                Schulden Dossier
+              </button>
+             )}
           </div>
         </div>
       </div>
@@ -184,17 +220,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           subValue="Saldo" 
           icon={TrendingUp} 
           color={stats.balance >= 0 ? "bg-indigo-600" : "bg-red-500"}
-          infoText="Wat je overhoudt na alle geregistreerde uitgaven (Inkomen - Uitgaven)."
+          infoText={appMode === 'debt_counseling' ? "Beschikbare ruimte voor leefgeld of extra aflossing." : "Wat je overhoudt na alle geregistreerde uitgaven."}
         />
-        <StatCard 
-          title="Spaarquote" 
-          value={stats.totalIncome > 0 ? `${Math.round((stats.savingsPotential / stats.totalIncome) * 100)}%` : '0%'} 
-          subValue={formatCurrency(stats.savingsPotential)} 
-          icon={TrendingDown} 
-          color="bg-emerald-500"
-          infoText="Percentage van je inkomen dat je theoretisch kunt sparen."
-          trendText="Mogelijk"
-        />
+        
+        {/* Dynamic Card based on Mode */}
+        {appMode === 'debt_counseling' ? (
+           <StatCard 
+            title="Totale Schuld" 
+            value={formatCurrency(stats.totalDebt || 0)} 
+            subValue="Openstaand" 
+            icon={Landmark} 
+            color="bg-red-600"
+            isWarning={true}
+            infoText="Totale som van alle geregistreerde schulden in het dossier."
+          />
+        ) : (
+          <StatCard 
+            title="Spaarquote" 
+            value={stats.totalIncome > 0 ? `${Math.round((stats.savingsPotential / stats.totalIncome) * 100)}%` : '0%'} 
+            subValue={formatCurrency(stats.savingsPotential)} 
+            icon={TrendingDown} 
+            color="bg-emerald-500"
+            infoText="Percentage van je inkomen dat je theoretisch kunt sparen."
+            trendText="Mogelijk"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -208,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                 <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                 <div className={`w-3 h-3 rounded-full ${appMode === 'debt_counseling' ? 'bg-orange-600' : 'bg-indigo-600'}`}></div>
                  <span className="text-sm font-medium text-slate-600">Inkomsten</span>
               </div>
               <div className="flex items-center gap-2">
@@ -228,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
-                <Bar dataKey="inkomsten" fill="#4f46e5" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="inkomsten" fill={appMode === 'debt_counseling' ? '#ea580c' : '#4f46e5'} radius={[6, 6, 0, 0]} />
                 <Bar dataKey="uitgaven" fill="#e2e8f0" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -263,33 +313,64 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           )}
 
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Snelle Navigatie</h3>
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Acties</h3>
           <div className="flex-1 space-y-3">
-             <button 
-               onClick={() => onNavigate(ToolId.PENSIOEN)}
-               className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/50 transition-all group text-left"
-             >
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                   <TrendingUp className="w-4 h-4" />
-                 </div>
-                 <span className="font-medium text-slate-700 group-hover:text-indigo-900">Pensioen Check</span>
-               </div>
-               <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400" />
-             </button>
-             
-             <button 
-               onClick={() => onNavigate(ToolId.HYPOTHEEK)}
-               className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/50 transition-all group text-left"
-             >
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-pink-100 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                   <TrendingDown className="w-4 h-4" />
-                 </div>
-                 <span className="font-medium text-slate-700 group-hover:text-pink-900">Hypotheek</span>
-               </div>
-               <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-pink-400" />
-             </button>
+             {appMode === 'standard' ? (
+                <>
+                 <button 
+                   onClick={() => onNavigate(ToolId.PENSIOEN)}
+                   className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/50 transition-all group text-left"
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                       <TrendingUp className="w-4 h-4" />
+                     </div>
+                     <span className="font-medium text-slate-700 group-hover:text-indigo-900">Pensioen Check</span>
+                   </div>
+                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400" />
+                 </button>
+                 
+                 <button 
+                   onClick={() => onNavigate(ToolId.HYPOTHEEK)}
+                   className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/50 transition-all group text-left"
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-2 bg-pink-100 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
+                       <TrendingDown className="w-4 h-4" />
+                     </div>
+                     <span className="font-medium text-slate-700 group-hover:text-pink-900">Hypotheek</span>
+                   </div>
+                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-pink-400" />
+                 </button>
+                </>
+             ) : (
+                <>
+                 <button 
+                   onClick={() => onNavigate(ToolId.SCHULDEN)}
+                   className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-orange-100 hover:bg-orange-50/50 transition-all group text-left"
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-2 bg-orange-100 text-orange-600 rounded-lg group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                       <Landmark className="w-4 h-4" />
+                     </div>
+                     <span className="font-medium text-slate-700 group-hover:text-orange-900">Schulden Dossier</span>
+                   </div>
+                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400" />
+                 </button>
+                 <button 
+                   onClick={() => onNavigate(ToolId.BUDGET)}
+                   className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/50 transition-all group text-left"
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                       <Wallet className="w-4 h-4" />
+                     </div>
+                     <span className="font-medium text-slate-700 group-hover:text-blue-900">Leefgeld Beheer</span>
+                   </div>
+                   <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400" />
+                 </button>
+                </>
+             )}
           </div>
         </div>
       </div>

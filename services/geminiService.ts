@@ -1,14 +1,12 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const getClient = () => {
-
-  const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
-
+  const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    console.error("API Key niet gevonden. Zorg dat VITE_GEMINI_API_KEY in je .env bestand staat.");
+    console.error("API Key not found");
     return null;
   }
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 };
 
 export const getFinancialAdvice = async (
@@ -19,11 +17,6 @@ export const getFinancialAdvice = async (
   if (!client) return "Geen API key gevonden. Controleer je instellingen.";
 
   try {
-    // In de @google/generative-ai SDK gebruik je getGenerativeModel
-    const model = client.getGenerativeModel({ 
-      model: "gemini-2.0-flash", // Of "gemini-1.5-flash"
-    });
-
     const prompt = `
       Je bent een ervaren financieel adviseur in Nederland.
       Gebruik de volgende context (data uit een calculator):
@@ -34,12 +27,16 @@ export const getFinancialAdvice = async (
       Geef antwoord in het Nederlands. Gebruik markdown voor opmaak. Houd het beknopt en actiegericht.
     `;
 
-    // De syntax voor het genereren van content
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await client.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster simple responses
+      },
+    });
 
-    return text || "Geen antwoord ontvangen van de AI.";
+    return response.text || "Geen antwoord ontvangen van de AI.";
   } catch (error) {
     console.error("Gemini Error:", error);
     return "Er is een fout opgetreden bij het ophalen van advies. Probeer het later opnieuw.";
